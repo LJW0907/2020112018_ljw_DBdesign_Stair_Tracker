@@ -1,0 +1,30 @@
+{
+  "name": "2020112018_dbdesign_stairpoint_2",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "start": "node backend/src/app.js",
+    "dev": "nodemon backend/src/app.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.5"
+  },
+  "description": "",
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "axios": "^1.7.8",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.7",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15"
+  }
+}
