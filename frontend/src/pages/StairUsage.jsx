@@ -9,13 +9,14 @@ function StairUsage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // 사용자의 계단 이용 기록 조회
+        // 백엔드에서는 records라는 키로 데이터를 반환하므로, 이를 고려해야 합니다
         const recordsResponse = await axios.get(
           `http://localhost:3000/api/stair-usage/user/${user.user_id}`
         );
-        setRecords(recordsResponse.data);
+        // 백엔드 응답에서 records 배열을 추출합니다
+        setRecords(recordsResponse.data.records || []);
 
-        // 건물 목록 조회
+        // 건물 목록도 함께 가져옵니다
         const buildingsResponse = await axios.get(
           "http://localhost:3000/api/buildings"
         );
@@ -77,27 +78,12 @@ function StairUsage() {
                   {record.floors_climbed}층
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {record.floors_climbed * 10}P
+                  {record.points_earned}P
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
-
-      {/* 페이지네이션 */}
-      <div className="flex justify-center mt-4">
-        <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-          <button className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-            이전
-          </button>
-          <button className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-            1
-          </button>
-          <button className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-            다음
-          </button>
-        </nav>
       </div>
     </div>
   );

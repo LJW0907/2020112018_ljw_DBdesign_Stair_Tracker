@@ -32,7 +32,7 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// 건물 추가 (관리자용)
+// 건물 추가
 router.post("/", async (req, res) => {
   try {
     const { building_name, location } = req.body;

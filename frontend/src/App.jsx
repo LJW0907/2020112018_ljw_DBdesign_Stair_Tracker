@@ -1,3 +1,4 @@
+// frontend/src/App.jsx
 import {
   BrowserRouter as Router,
   Routes,
@@ -12,7 +13,8 @@ import StairUsage from "./pages/StairUsage";
 import Points from "./pages/Points";
 import Groups from "./pages/Groups";
 import Profile from "./pages/Profile";
-import PrivateRoute from "./components/PrivateRoute.jsx";
+import GroupDashboard from "./components/group/GroupDashboard"; // 새로 추가
+import PrivateRoute from "./components/PrivateRoute";
 
 function App() {
   return (
@@ -36,6 +38,8 @@ function App() {
           <Route path="stairs" element={<StairUsage />} />
           <Route path="points" element={<Points />} />
           <Route path="groups" element={<Groups />} />
+          <Route path="groups/:groupId" element={<GroupDashboard />} />{" "}
+          {/* 새로 추가 */}
           <Route path="profile" element={<Profile />} />
         </Route>
       </Routes>

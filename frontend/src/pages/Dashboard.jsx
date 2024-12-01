@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 function Dashboard() {
+  // 대시보드의 주요 통계 데이터를 관리하는 상태
   const [stats, setStats] = useState({
     todayStairs: 0,
     totalPoints: 0,
@@ -9,17 +10,22 @@ function Dashboard() {
     groupRank: null,
   });
 
-  // 폼 데이터를 관리하기 위한 상태 추가
+  // 계단 사용 기록을 위한 폼 데이터 상태
   const [formData, setFormData] = useState({
     building_id: "",
     floors_climbed: "",
   });
+
+  // 건물 목록을 관리하는 상태
   const [buildings, setBuildings] = useState([]);
+
+  // 사용자 피드백을 위한 상태
   const [submitStatus, setSubmitStatus] = useState({ type: "", message: "" });
 
+  // localStorage에서 사용자 정보 가져오기
   const user = JSON.parse(localStorage.getItem("user"));
 
-  // 건물 목록을 가져오는 useEffect 추가
+  // 건물 목록을 가져오는 useEffect
   useEffect(() => {
     const fetchBuildings = async () => {
       try {
@@ -37,6 +43,7 @@ function Dashboard() {
     fetchBuildings();
   }, []);
 
+  // 대시보드 데이터를 가져오는 useEffect
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
@@ -47,10 +54,12 @@ function Dashboard() {
           `http://localhost:3000/api/points/total/${user.user_id}`
         );
 
+        console.log("Stairs Response:", stairsResponse.data); // 디버깅용
+
         setStats({
           todayStairs: stairsResponse.data.today || 0,
           totalPoints: pointsResponse.data.total_points || 0,
-          weeklyStats: stairsResponse.data.weekly || [],
+          weeklyStats: stairsResponse.data.records || [],
           groupRank: null,
         });
       } catch (error) {
@@ -61,7 +70,7 @@ function Dashboard() {
     fetchDashboardData();
   }, [user.user_id]);
 
-  // 입력 폼 핸들러 추가
+  // 폼 입력 값 변경 핸들러
   const handleInputChange = (e) => {
     setFormData({
       ...formData,
@@ -69,7 +78,7 @@ function Dashboard() {
     });
   };
 
-  // 기록 제출 핸들러 추가
+  // 계단 사용 기록 제출 핸들러
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitStatus({ type: "", message: "" });

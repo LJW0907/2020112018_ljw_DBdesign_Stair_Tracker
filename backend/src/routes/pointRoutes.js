@@ -3,6 +3,7 @@ const router = express.Router();
 const pool = require("../config/db");
 
 // 사용자의 총 포인트 조회
+// 사용자의 총 포인트 조회
 router.get("/total/:userId", async (req, res) => {
   try {
     const [result] = await pool.query(

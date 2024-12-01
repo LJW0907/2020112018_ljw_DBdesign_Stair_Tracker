@@ -1,0 +1,49 @@
+# 환경설정 파일
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# 의존성 디렉토리
+node_modules/
+/frontend/node_modules/
+/backend/node_modules/
+
+# 빌드 산출물
+/dist
+/build
+/frontend/dist
+/frontend/build
+/backend/dist
+/backend/build
+
+# 로그 파일
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE 및 편집기 설정
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# 테스트 커버리지 리포트
+/coverage
+/frontend/coverage
+/backend/coverage
+
+# 임시 파일
+.tmp
+.temp
+
+# 데이터베이스 설정
+/backend/src/config/db.js
+
+# 캐시 디렉토리
+.cache/
+.npm/
+.eslintcache

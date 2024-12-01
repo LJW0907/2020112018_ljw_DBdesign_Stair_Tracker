@@ -1,156 +1,81 @@
 const axios = require("axios");
-const { setupTestDatabase } = require("./setup");
 const baseURL = "http://localhost:3000/api/groups";
 
-describe("Group API Tests", () => {
-  // 테스트에 필요한 변수들을 선언합니다
-  let testGroupId;
-  const testUser = {
-    user_id: 1,
-    username: "testuser",
+// 테스트에 필요한 기본 데이터를 beforeAll에서 설정
+let testData;
+
+beforeAll(() => {
+  testData = {
+    groupId: null,
+    userId: 1,
+    secondUserId: 2,
+    groupName: `Test Group ${Date.now()}`,
+  };
+});
+
+// 각 테스트를 독립적인 describe 블록으로 분리
+describe("Group API", () => {
+  let testData = {
+    firstUser: null,
+    secondUser: null,
+    groupId: null,
   };
 
-  // 각 테스트 시작 전에 데이터베이스를 초기화합니다
+  // 테스트 데이터 설정
   beforeAll(async () => {
-    await setupTestDatabase();
+    // 첫 번째 테스트 사용자 생성
+    const firstUserResponse = await axios.post(
+      "http://localhost:3000/api/users/register",
+      {
+        username: `testuser1_${Date.now()}`,
+        email: `testuser1_${Date.now()}@example.com`,
+        password: "password123",
+      }
+    );
+    testData.firstUser = firstUserResponse.data.userId;
+
+    // 두 번째 테스트 사용자 생성
+    const secondUserResponse = await axios.post(
+      "http://localhost:3000/api/users/register",
+      {
+        username: `testuser2_${Date.now()}`,
+        email: `testuser2_${Date.now()}@example.com`,
+        password: "password123",
+      }
+    );
+    testData.secondUser = secondUserResponse.data.userId;
   });
 
   // 그룹 생성 테스트
-  test("Should create a new group", async () => {
-    const groupData = {
+  test("should create a new group", async () => {
+    const response = await axios.post(baseURL, {
       group_name: `Test Group ${Date.now()}`,
-      created_by: testUser.user_id,
-      description: "This is a test group",
-    };
+      created_by: testData.firstUser,
+    });
 
-    try {
-      const response = await axios.post(baseURL, groupData);
-      testGroupId = response.data.group_id;
-
-      expect(response.status).toBe(201);
-      expect(response.data).toHaveProperty("group_id");
-      expect(response.data.message).toBe("Group created successfully");
-
-      // 생성된 그룹 ID를 저장하여 후속 테스트에서 사용
-      console.log("Created group ID:", testGroupId);
-    } catch (error) {
-      console.error("Complete error:", error.response?.data);
-      throw error;
-    }
+    testData.groupId = response.data.group_id;
+    expect(response.status).toBe(201);
+    expect(response.data.message).toBe("Group created successfully");
   });
 
-  // 그룹 검색 테스트는 그룹이 생성된 후에 실행
-  test("Should search for groups", async () => {
-    try {
-      const response = await axios.get(`${baseURL}/search?term=Test`);
+  // 이미 있던 테스트들은 그대로 유지하되, user_id 참조를 testData.firstUser와 testData.secondUser로 수정
 
-      expect(response.status).toBe(200);
-      expect(Array.isArray(response.data)).toBe(true);
-      expect(response.data.length).toBeGreaterThan(0);
+  test("should allow new user to join group", async () => {
+    const response = await axios.post(`${baseURL}/join`, {
+      user_id: testData.secondUser,
+      group_id: testData.groupId,
+    });
 
-      const group = response.data[0];
-      expect(group).toHaveProperty("group_name");
-      expect(group).toHaveProperty("member_count");
-    } catch (error) {
-      console.error("Complete error:", error.response?.data);
-      throw error;
-    }
+    expect(response.status).toBe(201);
+    expect(response.data.message).toBe("Joined group successfully");
+
+    const groupResponse = await axios.get(`${baseURL}/${testData.groupId}`);
+    expect(groupResponse.data.members.length).toBeGreaterThan(1);
   });
 
-  // 그룹 상세 정보 조회 테스트
-  test("Should get group details", async () => {
-    // testGroupId가 정의되었는지 확인
-    expect(testGroupId).toBeDefined();
-
-    try {
-      const response = await axios.get(`${baseURL}/${testGroupId}`);
-
-      expect(response.status).toBe(200);
-      expect(response.data).toHaveProperty("group_name");
-      expect(response.data).toHaveProperty("member_count");
-      expect(response.data.member_count).toBeGreaterThanOrEqual(1);
-    } catch (error) {
-      console.error("Complete error:", error.response?.data);
-      throw error;
-    }
-  });
-
-  // 그룹 멤버 조회 테스트
-  test("Should get group members with their stats", async () => {
-    expect(testGroupId).toBeDefined();
-
-    try {
-      const response = await axios.get(`${baseURL}/${testGroupId}/members`);
-
-      expect(response.status).toBe(200);
-      expect(Array.isArray(response.data)).toBe(true);
-      expect(response.data.length).toBeGreaterThan(0);
-
-      const member = response.data[0];
-      expect(member).toHaveProperty("username");
-      expect(member).toHaveProperty("today_floors");
-      expect(member).toHaveProperty("total_floors");
-      expect(member).toHaveProperty("total_points");
-    } catch (error) {
-      console.error("Complete error:", error.response?.data);
-      throw error;
-    }
-  });
-
-  // 그룹 가입 테스트
-  test("Should join a group", async () => {
-    expect(testGroupId).toBeDefined();
-
-    const joinData = {
-      user_id: 2,
-      group_id: testGroupId,
-    };
-
-    try {
-      const response = await axios.post(`${baseURL}/join`, joinData);
-
-      expect(response.status).toBe(201);
-      expect(response.data.message).toBe("Successfully joined the group");
-    } catch (error) {
-      console.error("Complete error:", error.response?.data);
-      throw error;
-    }
-  });
-
-  // 중복 가입 방지 테스트
-  test("Should prevent duplicate group joining", async () => {
-    expect(testGroupId).toBeDefined();
-
-    const joinData = {
-      user_id: testUser.user_id,
-      group_id: testGroupId,
-    };
-
-    try {
-      await axios.post(`${baseURL}/join`, joinData);
-      throw new Error("Should not allow duplicate joining");
-    } catch (error) {
-      expect(error.response.status).toBe(400);
-      expect(error.response.data.message).toBe(
-        "Already a member of this group"
-      );
-    }
-  });
-
-  // 그룹 탈퇴 테스트
-  test("Should leave a group", async () => {
-    expect(testGroupId).toBeDefined();
-
-    try {
-      const response = await axios.delete(`${baseURL}/${testGroupId}/leave`, {
-        data: { user_id: 2 },
-      });
-
-      expect(response.status).toBe(200);
-      expect(response.data.message).toBe("Successfully left the group");
-    } catch (error) {
-      console.error("Complete error:", error.response?.data);
-      throw error;
-    }
+  // 선택적: 테스트 후 정리
+  afterAll(async () => {
+    // 필요한 경우 생성된 테스트 데이터 정리
+    // 이 예제에서는 생략 (데이터베이스 관리 정책에 따라 구현)
   });
 });

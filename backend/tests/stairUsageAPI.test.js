@@ -1,80 +1,33 @@
-const express = require("express");
-const router = express.Router();
-const pool = require("../config/db");
+const axios = require("axios");
+const baseURL = "http://localhost:3000/api/stair-usage";
 
-// 계단 사용 기록 등록
-router.post("/", async (req, res) => {
-  const connection = await pool.getConnection();
+describe("Stair Usage API Tests", () => {
+  const testUserId = 1;
+  const testBuildingId = 1;
 
-  try {
-    await connection.beginTransaction();
+  test("Should record stair usage", async () => {
+    const stairUsage = {
+      user_id: testUserId,
+      building_id: testBuildingId,
+      floors_climbed: 5,
+    };
 
-    const { user_id, building_id, floors_climbed } = req.body;
+    const response = await axios.post(baseURL, stairUsage);
+    expect(response.status).toBe(201);
+    expect(response.data).toHaveProperty("points_earned", 50);
+  });
 
-    // 계단 사용 기록 저장
-    const [stairResult] = await connection.query(
-      "INSERT INTO StairUsage (user_id, building_id, floors_climbed) VALUES (?, ?, ?)",
-      [user_id, building_id, floors_climbed]
+  test("Should get user stair usage records", async () => {
+    const response = await axios.get(`${baseURL}/user/${testUserId}`);
+    expect(response.status).toBe(200);
+    expect(Array.isArray(response.data.records)).toBe(true); // .records 추가
+  });
+
+  test("Should get building statistics", async () => {
+    const response = await axios.get(
+      `${baseURL}/building/${testBuildingId}/stats`
     );
-
-    // 포인트 계산 (1층당 10포인트)
-    const points = floors_climbed * 10;
-
-    // 포인트 적립 기록 저장
-    await connection.query(
-      "INSERT INTO Points (user_id, points, reason) VALUES (?, ?, ?)",
-      [user_id, points, `${floors_climbed}층 계단 이용`]
-    );
-
-    await connection.commit();
-
-    res.status(201).json({
-      message: "Stair usage recorded successfully",
-      usage_id: stairResult.insertId,
-      points_earned: points,
-    });
-  } catch (err) {
-    await connection.rollback();
-    res
-      .status(500)
-      .json({ message: "Error recording stair usage", error: err.message });
-  } finally {
-    connection.release();
-  }
+    expect(response.status).toBe(200);
+    expect(response.data).toHaveProperty("total_uses");
+  });
 });
-
-// 사용자별 계단 사용 기록 조회
-router.get("/user/:userId", async (req, res) => {
-  try {
-    // 오늘의 기록 조회
-    const [todayRecords] = await pool.query(
-      `SELECT SUM(floors_climbed) as today_floors
-             FROM StairUsage 
-             WHERE user_id = ? 
-             AND DATE(timestamp) = CURDATE()`,
-      [req.params.userId]
-    );
-
-    // 전체 기록 조회 (건물 이름 포함)
-    const [records] = await pool.query(
-      `SELECT StairUsage.*, Buildings.building_name, 
-                    (StairUsage.floors_climbed * 10) as points_earned
-             FROM StairUsage 
-             JOIN Buildings ON StairUsage.building_id = Buildings.building_id
-             WHERE user_id = ?
-             ORDER BY timestamp DESC`,
-      [req.params.userId]
-    );
-
-    res.json({
-      today: todayRecords[0].today_floors || 0,
-      records: records,
-    });
-  } catch (err) {
-    res
-      .status(500)
-      .json({ message: "Error fetching records", error: err.message });
-  }
-});
-
-module.exports = router;
